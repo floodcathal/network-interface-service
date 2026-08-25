@@ -1,0 +1,24 @@
+{
+    "Platform": "Linux-4.4.0-142-generic-x86_64-with-Ubuntu-14.04-trusty",
+    "Hostname": "cathal-VirtualBox",
+    "Interfaces": [
+        {
+            "IPv4": "127.0.0.1",
+            "MAC": "unknown",
+            "MTU": "65536",
+            "interface": "lo"
+        },
+        {
+            "IPv4": "10.0.2.15",
+            "MAC": null,
+            "MTU": "1500",
+            "interface": "eth0"
+        },
+        {
+            "IPv4": "192.168.0.235",
+            "MAC": null,
+            "MTU": "1500",
+            "interface": "eth1"
+        }
+    ]
+}
