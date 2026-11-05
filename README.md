@@ -23,7 +23,7 @@
 
 ---
 
-**Programming for Networks — BSc (Hons) Cloud Computing, TU Dublin.**
+**Programming for Networks — Year 3, BTech Networking Technologies (TU716), TU Dublin, December 2024.**
 Cathal Flood
 
 ---
@@ -88,18 +88,54 @@ python3 client.py --ip 10.156.5.146 --port 6794
     "hostname": "cathal-VirtualBox",
     "Platform": "Linux-4.4.0-142-generic-x86_64-with-Ubuntu-14.04-trusty",
     "interfaces": [
-        { "interface": "lo",   "MTU": "65536", "ip address": "127.0.0.1",     "mac address": "unknown" },
-        { "interface": "eth0", "MTU": "1500",  "ip address": "10.0.2.15",     "mac address": "unknown" },
-        { "interface": "eth1", "MTU": "1500",  "ip address": "192.168.0.235", "mac address": "unknown" }
+        { "interface": "eth0", "MTU": "1500",  "ip address": "10.0.2.15",    "mac address": "08:00:27:2f:62:95" },
+        { "interface": "eth1", "MTU": "1500",  "ip address": "10.156.5.146", "mac address": "08:00:27:cc:48:c4" },
+        { "interface": "lo",   "MTU": "65536", "ip address": "127.0.0.1",    "mac address": "unknown" }
     ]
 }
 ```
 
-[`examples/interface.json`](examples/interface.json) holds a response captured from the
-running server on the lab VM. It predates the current key names — that iteration emitted
-`Hostname` / `IPv4` / `MAC` where the code above emits `hostname` / `ip address` /
-`mac address` — but the values are genuine, and it shows the MAC regex falling through to
-`unknown` on the virtual adapters.
+That is the response the client printed in the lab, connecting from a Windows machine to the
+server on the Ubuntu VM ([`docs/client-output.png`](docs/client-output.png)). The loopback
+interface has no hardware address, so it reports `unknown`.
+
+[`examples/interface.json`](examples/interface.json) is an earlier file written by the
+standalone script below. It uses the older key names (`Hostname` / `IPv4` / `MAC`), and its
+MAC fields are `null` because that version's regex did not match the adapters.
+
+## Part 1: the standalone script
+
+Before the client/server version, the assignment's first part was a local tool.
+[`standalone/get_interface_data.py`](standalone/get_interface_data.py) gathers the hostname,
+platform and per-interface MTU, IPv4 and MAC, pretty-prints them, and writes them to
+`interface.json`. The server reuses the same interface-parsing approach. My first attempt
+split `ifconfig` output by line position and broke whenever the layout shifted; switching to
+regular expressions fixed that.
+
+## Verifying it in Wireshark
+
+[`captures/tcp-exchange.pcapng`](captures/tcp-exchange.pcapng) is the capture of a full
+exchange on the college lab network (server port 6792 in that run). Open it in Wireshark and
+filter on `tcp.port == 6792`.
+
+<p align="center">
+  <img src="docs/wireshark-json-payload.png" alt="Wireshark hex view of the JSON payload" width="640">
+</p>
+
+<p align="center"><sub>The single <code>PSH, ACK</code> segment carries the whole JSON
+document — hostname, platform and each interface — readable in the ASCII pane.</sub></p>
+
+[`docs/wireshark-tcp-header.png`](docs/wireshark-tcp-header.png) and
+[`docs/wireshark-tcp-data.png`](docs/wireshark-tcp-data.png) show the TCP header fields
+(ports, relative sequence and acknowledgement numbers, flags, window size) for segments in
+the same exchange.
+
+## Report
+
+The full assignment report — design, structure charts, flowcharts, implementation notes,
+testing and TCP analysis — is in [`docs/report.pdf`](docs/report.pdf). The report notes one
+limitation honestly: the brief asked for cross-platform support, and this version targets
+Linux only.
 
 ## A note on `ifconfig` output
 
@@ -119,12 +155,22 @@ beyond this exercise.
 server.py               TCP server - interface discovery, parsing, JSON response
 client.py               CLI client - argparse, connect, receive, pretty-print
 requirements.txt        pexpect
+standalone/
+  get_interface_data.py Part 1: local interface report written to JSON
 examples/
-  interface.json        A captured server response
+  interface.json        Output from an earlier run of the standalone script
+captures/
+  tcp-exchange.pcapng   Wireshark capture of a full client-server exchange
 docs/
   server-block.png      Server block diagram
   client-block.png      Client block diagram
   server-flow.png       Server flowchart
   client-flow.png       Client flowchart
   tcp-flow.png          Wireshark flow graph of a full exchange
+  server-structure.png  Server structure chart
+  client-structure.png  Client structure chart
+  server-flow-detailed.png / client-flow-detailed.png   Second-page flowcharts
+  client-output.png     Client output in the lab
+  wireshark-*.png       Wireshark views of the payload and TCP header
+  report.pdf            Full assignment report
 ```
